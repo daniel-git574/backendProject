@@ -1,52 +1,62 @@
 # backend-project/database.py
+from __future__ import annotations
+
+"""
+DATABASE CONFIGURATION
+
+Responsibilities:
+- Build the connection string (supports env-first; works in local & Docker)
+- Create SQLAlchemy Engine (the “gateway” to PostgreSQL)
+- Create the Session factory (used per request)
+- Create the Base class (parent for all ORM models)
+
+HOW CONNECTION IS CHOSEN (priority order):
+1) If env var DATABASE_URL is set -> use it verbatim.
+   - Example: postgresql://postgres:admin@db:5432/node_exercise
+2) Otherwise, compose from POSTGRES_* env vars with sensible defaults:
+   POSTGRES_USER     (default: postgres)
+   POSTGRES_PASSWORD (default: admin)
+   POSTGRES_DB       (default: node_exercise)
+   POSTGRES_HOST     (default: localhost)   # in Docker Compose: usually 'db'
+   POSTGRES_PORT     (default: 5432)
+"""
+
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# ============================================================
-# DATABASE CONFIGURATION
-# This file is responsible for:
-# - Creating the connection to the PostgreSQL database
-# - Creating the SQLAlchemy Engine (the “gateway” to the DB)
-# - Creating the Session factory (used per request)
-# - Creating the Base class (parent for all ORM models)
-# ============================================================
+# -------- Resolve connection string from environment (env-first) ----------
+def _build_db_url() -> str:
+    # 1) Full URL provided?
+    url = os.getenv("DATABASE_URL")
+    if url:
+        return url
 
-# ------------------------------------------------------------
-# 1. Database connection string
-# Format:
-# postgresql://USER:PASSWORD@HOST:PORT/DB_NAME
-# ------------------------------------------------------------
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:admin@localhost:5432/node_exercise"
+    # 2) Compose from parts (works for local & Compose)
+    user = os.getenv("POSTGRES_USER", "postgres")
+    password = os.getenv("POSTGRES_PASSWORD", "admin")
+    db_name = os.getenv("POSTGRES_DB", "node_exercise")
+    host = os.getenv("POSTGRES_HOST", "localhost")  # in Compose: use 'db'
+    port = os.getenv("POSTGRES_PORT", "5432")
 
-# ------------------------------------------------------------
-# 2. Engine
-# The engine manages all low-level communication with PostgreSQL.
-# echo=True: shows executed SQL in the terminal (useful for debugging).
-# ------------------------------------------------------------
-engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=True)
+    return f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
 
-# ------------------------------------------------------------
-# 3. SessionLocal
-# This is a factory that creates DB sessions.
-# Each request in FastAPI gets its own session via Depends(get_db).
-# ------------------------------------------------------------
+SQLALCHEMY_DATABASE_URL = _build_db_url()
+
+# -------- Engine (echo=True only if you want SQL logs) --------------------
+# Tip: you can toggle echo via env (ECHO_SQL=1) if you like.
+echo_flag = os.getenv("ECHO_SQL", "0") == "1"
+engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=echo_flag)
+
+# -------- Session factory per-request -------------------------------------
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# ------------------------------------------------------------
-# 4. Base
-# All ORM models (tables) inherit from this Base class.
-# SQLAlchemy uses Base.metadata to create tables.
-# ------------------------------------------------------------
+# -------- Declarative base for ORM models ---------------------------------
 Base = declarative_base()
 
-# ------------------------------------------------------------
-# OPTIONAL:
-# Running this file directly (python database.py)
-# will create all tables defined in models.py.
-# Very useful in development environments.
-# ------------------------------------------------------------
+# -------- Dev helper: create tables when run directly ---------------------
 if __name__ == "__main__":
-    from models import UserDB  # Import models so SQLAlchemy registers them
-
+    # Import models so SQLAlchemy registers them
+    from models import UserDB
     Base.metadata.create_all(bind=engine)
-    print("Tables created successfully")
+    print(f"Tables created successfully against: {SQLALCHEMY_DATABASE_URL}")

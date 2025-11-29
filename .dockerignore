@@ -2,4 +2,6 @@ venv/
 __pycache__/
 .vscode/
 *.db
+.git
+.gitignore
 .env

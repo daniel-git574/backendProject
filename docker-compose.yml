@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: backend-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # פורט החוצה (לא חובה, אבל נוח אם תרצה להתחבר מ-psql מחוץ ל-Docker)
+    ports:
+      - "5432:5432"
+    volumes:
+      # Volume בשם pgdata ישמור את קבצי ה-DB בדיסק של Docker
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} -h localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # אפשר לתת DATABASE_URL אחד, או להשאיר את ה-POSTGRES_* כדי שהפונקציה שלך תרכיב URL
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+
+      SECRET_KEY: ${SECRET_KEY}
+      ADMIN_SECRET: ${ADMIN_SECRET}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
+      ECHO_SQL: ${ECHO_SQL}
+    ports:
+      - "8000:8000"
+    # ברירת המחדל: הפקודה מה-Dockerfile (uvicorn main:app ...).
+    # אם תרצה override: 
+    # command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+volumes:
+  pgdata:
