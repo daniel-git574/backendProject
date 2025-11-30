@@ -9,9 +9,9 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# ------------------
+# -----------------
 # Include Routers
-# ------------------
+# -----------------
 # auth.router  → login + token issuing
 # users.router → register/promote/demote/list (admin ops)
 # array.router → in-memory array CRUD (admin for write ops)
