@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 
 from core.security import get_db, get_current_user, ensure_admin
 from schemas.user_schema import RegisterRequest, UserOut
-from services.user_service import register_user, promote, demote, list_users
+# עדכון: מייבאים את הפונקציה המאוחדת update_admin_status
+from services.user_service import register_user, update_admin_status, list_users
 
 # All endpoints here are under the /users prefix and tagged as "Users" in Swagger.
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -29,8 +30,9 @@ def promote_user(
 ):
     # Ensure the *caller* is admin (not the target user).
     ensure_admin(current_user)
-    # Service does the actual promotion (sets is_admin=True), returns updated user.
-    return promote(db, username)
+    
+    # קוראים לפונקציה המאוחדת ומבקשים להפוך למנהל (True)
+    return update_admin_status(db, username, make_admin=True)
 
 @router.put("/{username}/demote", response_model=UserOut)
 def demote_user(
@@ -40,7 +42,9 @@ def demote_user(
 ):
     # Only admins can demote others.
     ensure_admin(current_user)
-    return demote(db, username)
+    
+    #  קוראים לפונקציה המאוחדת ומבקשים להסיר ניהול (False)
+    return update_admin_status(db, username, make_admin=False)
 
 @router.get("", response_model=list[UserOut])
 def list_all_users(
@@ -51,7 +55,3 @@ def list_all_users(
     ensure_admin(current_user)
     # Returns a list of UserOut (no passwords, only safe fields).
     return list_users(db)
-
-
-
-

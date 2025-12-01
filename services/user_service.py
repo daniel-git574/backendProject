@@ -1,19 +1,20 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from core.security import get_password_hash
 from core.config import ADMIN_SECRET
-from repositories.user_repository import (
-    get_by_username,
-    create_user,
-    set_admin,
-    list_users as repo_list
-)
+# שינוי: מייבאים את המחלקה במקום פונקציות בודדות
+from repositories.user_repository import UserRepository 
 from schemas.user_schema import RegisterRequest, UserOut
 
 
 def register_user(db: Session, data: RegisterRequest) -> UserOut:
+    # אתחול ה-Repository עם החיבור לדאטה-בייס
+    repo = UserRepository(db)
+
     # Check if username already exists
-    existing = get_by_username(db, data.username)
+    # שימוש במחלקה: repo.get_by_username
+    existing = repo.get_by_username(data.username)
     if existing:
         raise HTTPException(status_code=400, detail="Username already exists")
 
@@ -23,50 +24,46 @@ def register_user(db: Session, data: RegisterRequest) -> UserOut:
     # If admin_secret is provided → validate it
     if data.admin_secret not in (None, ""):
         if data.admin_secret != ADMIN_SECRET:
-            # User attempted to register as admin with wrong secret
             raise HTTPException(status_code=403, detail="Invalid admin secret")
         is_admin = True
 
-    # Create user in the database
-    new_user = create_user(db, data.username, data.password, is_admin)
+    # Hash the password
+    hashed_password = get_password_hash(data.password)
 
-    # Return clean user data (without password)
+    # Create user in the database
+    # שינוי: קריאה דרך ה-repo, ושליחת hashed_password
+    # שים לב: לא שולחים את db כפרמטר ראשון יותר!
+    new_user = repo.create_user(data.username, hashed_password, is_admin)
+
     return UserOut(username=new_user.username, is_admin=new_user.is_admin)
 
 
-def promote(db: Session, username: str) -> UserOut:
-    # Find user to promote
-    user = get_by_username(db, username)
+def update_admin_status(db: Session, username: str, make_admin: bool) -> UserOut:
+    """
+    Unified function to promote or demote a user.
+    """
+    repo = UserRepository(db) # אתחול
+
+    # 1. Find user
+    user = repo.get_by_username(username)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Cannot promote someone who is already admin
-    if user.is_admin:
-        raise HTTPException(status_code=400, detail="User is already an admin")
+    # 2. Check logic
+    if user.is_admin == make_admin:
+        status_str = "an admin" if make_admin else "a regular user"
+        raise HTTPException(status_code=400, detail=f"User is already {status_str}")
 
-    # Promote user to admin
-    user = set_admin(db, username, True)
-    return UserOut(username=user.username, is_admin=user.is_admin)
-
-
-def demote(db: Session, username: str) -> UserOut:
-    # Find user to demote
-    user = get_by_username(db, username)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    # Cannot demote a regular user
-    if not user.is_admin:
-        raise HTTPException(status_code=400, detail="User is already regular")
-
-    # Set admin = False
-    user = set_admin(db, username, False)
+    # 3. Update status
+    user = repo.set_admin(username, make_admin)
     return UserOut(username=user.username, is_admin=user.is_admin)
 
 
 def list_users(db: Session) -> list[UserOut]:
-    # Fetch all users and convert DB objects → Pydantic objects
+    repo = UserRepository(db) # אתחול
+    
+    # Fetch all users
     return [
         UserOut(username=u.username, is_admin=u.is_admin)
-        for u in repo_list(db)
+        for u in repo.list_users()
     ]

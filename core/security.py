@@ -7,6 +7,7 @@ What's inside:
 - JWT creation (create_access_token)
 - "Who am I?" dependency that decodes JWT and returns current user (get_current_user)
 - "Admin gate" that enforces admin-only access (ensure_admin)
+- Password Hashing utilities (bcrypt)
 """
 
 from datetime import datetime, timedelta
@@ -14,12 +15,25 @@ from typing import Generator
 
 from fastapi import Depends, HTTPException
 from jose import jwt, JWTError
+from passlib.context import CryptContext  # ספריית ההצפנה
 from sqlalchemy.orm import Session
 
 from database import SessionLocal
 from models import UserDB
 from schemas.user_schema import UserOut
 from core.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, oauth2_scheme
+
+# === Password Hashing Config ===
+# אנחנו מגדירים את הבלנדר (bcrypt)
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def get_password_hash(password: str) -> str:
+    """לוקח סיסמה רגילה ומחזיר מוצפנת (Hash)"""
+    return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """בודק אם סיסמה רגילה מתאימה להאש השמור"""
+    return pwd_context.verify(plain_password, hashed_password)
 
 
 # === DB session per request ===
@@ -50,16 +64,6 @@ def get_user_by_username(db: Session, username: str) -> UserDB | None:
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """
     Creates a signed JWT.
-
-    Parameters:
-      data: dict of claims to embed (e.g., {"sub": "alice", "is_admin": True})
-      expires_delta: optional custom lifetime. If omitted, uses default.
-
-    Behavior:
-      - copies the input claims
-      - computes expiration (now + expires_delta or default 15 min)
-      - adds the "exp" claim
-      - returns a compact JWT string signed with SECRET_KEY and ALGORITHM
     """
     to_encode = data.copy()
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
@@ -73,15 +77,7 @@ def get_current_user(
     db: Session = Depends(get_db),
 ) -> UserOut:
     """
-    FastAPI dependency that:
-      1) Reads the bearer token (via oauth2_scheme)
-      2) Decodes and verifies the JWT (signature + expiration)
-      3) Extracts the username ('sub') and is_admin flag
-      4) Loads the user from DB to ensure it still exists
-      5) Returns a *safe* Pydantic object (UserOut) to the endpoint
-
-    If anything is invalid (no token / bad signature / expired / user deleted),
-    raises HTTP 401 with the proper WWW-Authenticate header.
+    FastAPI dependency that decodes token and returns current user.
     """
     cred_exc = HTTPException(
         status_code=401,
@@ -112,10 +108,6 @@ def get_current_user(
 def ensure_admin(current_user: UserOut):
     """
     Guard used inside endpoints to enforce admin-only operations.
-    Usage:
-        def admin_only_endpoint(current_user: UserOut = Depends(get_current_user)):
-            ensure_admin(current_user)
-            ...
     """
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Admin privileges required")
