@@ -13,7 +13,7 @@ It uses a PostgreSQL database to save users and supports secure Login/Register p
 
 ---
 
-## Prerequisites (What you need)
+## Prerequisites
 
 * **Python 3.12+** installed.
 * **Docker Desktop** (Recommended for easy running).
@@ -41,7 +41,7 @@ The project includes a smart setup that allows running both locally and via Dock
 
 ---
 
-## Option 1: Running with Docker (Recommended)
+## Option 1: Running with Docker
 
 This installs the database and the server automatically inside containers.
 
