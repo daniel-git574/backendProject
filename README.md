@@ -3,7 +3,7 @@
 This project allows managing users and a data array using Python (FastAPI).
 It uses a PostgreSQL database to save users and supports secure Login/Register processes.
 
-## 📋 What does this project do?
+## What does this project do?
 
 * **Users:** You can register, login, and get a secure Token.
 * **Admins:** Special users can "promote" or "demote" others.
@@ -13,7 +13,7 @@ It uses a PostgreSQL database to save users and supports secure Login/Register p
 
 ---
 
-## 🛠️ Prerequisites (What you need)
+## Prerequisites (What you need)
 
 * **Python 3.12+** installed.
 * **Docker Desktop** (Recommended for easy running).
@@ -21,7 +21,7 @@ It uses a PostgreSQL database to save users and supports secure Login/Register p
 
 ---
 
-## ⚙️ Step 1: Configuration (.env)
+## Step 1: Configuration (.env)
 
 The project includes a smart setup that allows running both locally and via Docker without changing configuration files constantly.
 
