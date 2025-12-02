@@ -17,7 +17,7 @@ class UserDB(Base):
     # Username - must be unique
     username = Column(String(50), unique=True, nullable=False, index=True)
 
-    # Password - stored as plain text only because of assignment requirements
+    # Password - stored as a secure Hash (bcrypt)
     password = Column(String(255), nullable=False)
 
     # Whether the user is an admin (True/False)

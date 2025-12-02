@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 
 from core.security import get_db, get_current_user, ensure_admin
 from schemas.user_schema import RegisterRequest, UserOut
-# עדכון: מייבאים את הפונקציה המאוחדת update_admin_status
-from services.user_service import register_user, update_admin_status, list_users
+
+# שינוי עיקרי: הפסקנו לייבא מה-Service, עברנו לייבא את ה-Controller
+from controllers.user_controller import UserController
 
 # All endpoints here are under the /users prefix and tagged as "Users" in Swagger.
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -16,8 +17,10 @@ def register(
     # DB session per-request
     db: Session = Depends(get_db),
 ):
-    # Hand off to service layer: creates user, handles admin-secret logic, returns sanitized UserOut.
-    return register_user(db, data)
+    # שינוי: יצירת הקונטרולר והעברת הטיפול אליו
+    # (הבדיקה אם ה-DB קיים מתבצעת בתוך ה-__init__ של הקונטרולר)
+    controller = UserController(db)
+    return controller.register(data)
 
 @router.put("/{username}/promote", response_model=UserOut)
 def promote_user(
@@ -31,8 +34,9 @@ def promote_user(
     # Ensure the *caller* is admin (not the target user).
     ensure_admin(current_user)
     
-    # קוראים לפונקציה המאוחדת ומבקשים להפוך למנהל (True)
-    return update_admin_status(db, username, make_admin=True)
+    # שינוי: שימוש בקונטרולר לביצוע הפעולה (True = מנהל)
+    controller = UserController(db)
+    return controller.update_admin_status(username, make_admin=True)
 
 @router.put("/{username}/demote", response_model=UserOut)
 def demote_user(
@@ -43,8 +47,9 @@ def demote_user(
     # Only admins can demote others.
     ensure_admin(current_user)
     
-    #  קוראים לפונקציה המאוחדת ומבקשים להסיר ניהול (False)
-    return update_admin_status(db, username, make_admin=False)
+    # שינוי: שימוש בקונטרולר לביצוע הפעולה (False = משתמש רגיל)
+    controller = UserController(db)
+    return controller.update_admin_status(username, make_admin=False)
 
 @router.get("", response_model=list[UserOut])
 def list_all_users(
@@ -53,5 +58,7 @@ def list_all_users(
 ):
     # Only admins can list all users (sensitive operation).
     ensure_admin(current_user)
-    # Returns a list of UserOut (no passwords, only safe fields).
-    return list_users(db)
+    
+    # שינוי: שימוש בקונטרולר לשליפת הרשימה
+    controller = UserController(db)
+    return controller.list_all()

@@ -1,4 +1,8 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
 from routers import auth, users, array
 # from core.config import settings  # ← בטל/הפעל לפי שימוש
 from database import Base, engine
@@ -9,7 +13,41 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# -----------------
+
+#  ERROR HANDLERS (Global Exception Handling)
+# ---------------------------------------------------------
+# טיפול בשגיאות HTTP רגילות
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail, "success": False}
+    )
+
+# 2. טיפול בשגיאות ולידציה (כשמישהו שולח JSON לא תקין)
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={"detail": str(exc), "type": "Validation Error"}
+    )
+
+#  תופס שגיאות לא צפויות (קריסות שרת - 500)
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    # לוג למתכנת כדי שתוכלו לתקן את הבאג
+    print(f" CRITICAL UNEXPECTED ERROR: {exc}")
+    
+    # תשובה ללקוח
+    return JSONResponse(
+        status_code=500,
+        content={
+            "success": False,
+            "detail": "An unexpected error occurred. Please contact support.",
+            "error_type": "Internal Server Error"
+        },
+    )
+
 # Include Routers
 # -----------------
 # auth.router  → login + token issuing
@@ -39,7 +77,3 @@ def health(current_user = Depends(get_current_user)):
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
-
-
-
-

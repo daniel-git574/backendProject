@@ -3,7 +3,7 @@ from pydantic import BaseModel
 class RegisterRequest(BaseModel):
     # The username to create (must be unique in DB).
     username: str
-    # Plain password for the exercise (no hashing here).
+    # Password input (will be hashed by the service before saving).
     password: str
     # Optional secret that, if correct, registers the user as admin.
     admin_secret: str | None = None

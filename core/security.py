@@ -15,7 +15,7 @@ from typing import Generator
 
 from fastapi import Depends, HTTPException
 from jose import jwt, JWTError
-from passlib.context import CryptContext  # ספריית ההצפנה
+from passlib.context import CryptContext  #encryption library
 from sqlalchemy.orm import Session
 
 from database import SessionLocal
@@ -24,17 +24,14 @@ from schemas.user_schema import UserOut
 from core.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, oauth2_scheme
 
 # === Password Hashing Config ===
-# אנחנו מגדירים את הבלנדר (bcrypt)
+#(bcrypt)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def get_password_hash(password: str) -> str:
-    """לוקח סיסמה רגילה ומחזיר מוצפנת (Hash)"""
     return pwd_context.hash(password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """בודק אם סיסמה רגילה מתאימה להאש השמור"""
     return pwd_context.verify(plain_password, hashed_password)
-
 
 # === DB session per request ===
 def get_db() -> Generator[Session, None, None]:
