@@ -12,7 +12,6 @@ def login(db: Session, username: str, password: str) -> TokenResponse:
     repo = UserRepository(db) # אתחול
 
     # Fetch user record from DB by username
-    # שימוש ב-repo
     db_user = repo.get_by_username(username)
 
     # Login check

@@ -1,12 +1,10 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
-
-from core.security import get_db, get_current_user
+from core.security import get_current_user
 from schemas.token_schema import TokenResponse
-# שינוי 1: מחקנו את הייבוא הישן מה-Service
-# והוספנו ייבוא של הקונטרולר החדש
-from controllers.auth_controller import AuthController
+
+# מייבאים גם את המחלקה וגם את פונקציית ה-Dependency
+from controllers.auth_controller import AuthController, get_auth_controller
 
 # No prefix → /login stays exactly at /login
 router = APIRouter(tags=["Auth"])
@@ -17,13 +15,8 @@ router = APIRouter(tags=["Auth"])
 @router.post("/login", response_model=TokenResponse)
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db),
+    controller: AuthController = Depends(get_auth_controller),
 ):
-    # שינוי 2: במקום לקרוא לפונקציית שירות, אנחנו יוצרים את הקונטרולר
-    # ומעבירים לו את ה-DB (הבדיקה אם ה-DB תקין קורית בתוך הקונטרולר)
-    controller = AuthController(db)
-    
-    # הקונטרולר מטפל בלוגיקה ומחזיר את הטוקן
     return controller.login(form_data.username, form_data.password)
 
 # -----------------------

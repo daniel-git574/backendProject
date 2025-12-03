@@ -10,7 +10,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from routers import auth, users, array
 # from core.config import settings  # ← בטל/הפעל לפי שימוש
 from database import Base, engine
-from core.security import get_current_user  # לאימות ב-/health
+from core.security import get_current_user  
 
 app = FastAPI(
     title="FastAPI Exercise - Layered Architecture",

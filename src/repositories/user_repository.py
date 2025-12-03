@@ -20,27 +20,22 @@ class UserRepository:
         """
         Create a new user in the database.
         """
-        # שים לב: אנחנו שומרים password_hash ולא password רגיל (תואם לתיקון האבטחה שעשינו)
         user = UserDB(username=username, password=password_hash, is_admin=is_admin)
         
         self.db.add(user)
-        self.db.commit()
-        # מחיקת db.refresh(user) - הנתונים כבר אצלנו, חוסכים קריאה ל-DB
-        
+        self.db.commit()       
         return user
 
     def set_admin(self, username: str, is_admin: bool) -> UserDB | None:
         """
         Update the user's admin flag.
         """
-        user = self.get_by_username(username) # שימוש בפונקציה פנימית של המחלקה
+        user = self.get_by_username(username) 
         if not user:
             return None
 
         user.is_admin = is_admin
-        self.db.commit()
-        # גם כאן הורדנו את ה-refresh המיותר
-        
+        self.db.commit() 
         return user
 
     def list_users(self) -> list[UserDB]:

@@ -1,8 +1,8 @@
+# src/core/security.py
 """
 Security helpers and dependencies used across the app.
 
 What's inside:
-- DB session dependency (get_db)
 - Small user helper (get_user_by_username)
 - JWT creation (create_access_token)
 - "Who am I?" dependency that decodes JWT and returns current user (get_current_user)
@@ -11,20 +11,19 @@ What's inside:
 """
 
 from datetime import datetime, timedelta
-from typing import Generator
 
 from fastapi import Depends, HTTPException
 from jose import jwt, JWTError
-from passlib.context import CryptContext  #encryption library
+from passlib.context import CryptContext  # encryption library
 from sqlalchemy.orm import Session
 
-from database import SessionLocal
+from database import get_db
 from models import UserDB
 from schemas.user_schema import UserOut
 from core.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, oauth2_scheme
 
 # === Password Hashing Config ===
-#(bcrypt)
+# (bcrypt)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def get_password_hash(password: str) -> str:
@@ -32,21 +31,6 @@ def get_password_hash(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
-
-# === DB session per request ===
-def get_db() -> Generator[Session, None, None]:
-    """
-    Yields a SQLAlchemy Session for the duration of a single request.
-    FastAPI will:
-      - call this before the endpoint (open session)
-      - run the endpoint
-      - finally block closes the session after the endpoint returns/raises
-    """
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 # === helpers ===
@@ -71,7 +55,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
 # === auth dependencies ===
 def get_current_user(
     token: str = Depends(oauth2_scheme),  # extracts Bearer token from Authorization header
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),        
 ) -> UserOut:
     """
     FastAPI dependency that decodes token and returns current user.

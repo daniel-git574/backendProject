@@ -1,17 +1,17 @@
+from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
-from fastapi import HTTPException
 
+from database import get_db
 from services import array_service
 
 class ArrayController:
     def __init__(self, db: Session):
-        # דרישה 6: מוודאים שה-Session קיים (שומר על אחידות עם שאר הקונטרולרים)
+    
         if not db:
             raise HTTPException(status_code=500, detail="Database session is missing")
         self.db = db
 
     def get_all(self):
-        # הקונטרולר עוטף את התשובה במבנה הרצוי
         return {"array": array_service.get_all()}
 
     def get_by_index(self, index: int):
@@ -28,3 +28,7 @@ class ArrayController:
 
     def reset_index(self, index: int):
         return array_service.reset_index(index)
+
+
+def get_array_controller(db: Session = Depends(get_db)) -> ArrayController:
+    return ArrayController(db)

@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 
 from core.security import get_password_hash
 from core.config import ADMIN_SECRET
-# שינוי: מייבאים את המחלקה במקום פונקציות בודדות
 from repositories.user_repository import UserRepository 
 from schemas.user_schema import RegisterRequest, UserOut
 
@@ -31,8 +30,6 @@ def register_user(db: Session, data: RegisterRequest) -> UserOut:
     hashed_password = get_password_hash(data.password)
 
     # Create user in the database
-    # שינוי: קריאה דרך ה-repo, ושליחת hashed_password
-    # שים לב: לא שולחים את db כפרמטר ראשון יותר!
     new_user = repo.create_user(data.username, hashed_password, is_admin)
 
     return UserOut(username=new_user.username, is_admin=new_user.is_admin)
@@ -60,7 +57,7 @@ def update_admin_status(db: Session, username: str, make_admin: bool) -> UserOut
 
 
 def list_users(db: Session) -> list[UserOut]:
-    repo = UserRepository(db) # אתחול
+    repo = UserRepository(db)
     
     # Fetch all users
     return [

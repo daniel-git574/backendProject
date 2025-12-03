@@ -1,4 +1,4 @@
-# backend-project/database.py
+# src/database.py
 from __future__ import annotations
 
 """
@@ -9,25 +9,16 @@ Responsibilities:
 - Create SQLAlchemy Engine (the “gateway” to PostgreSQL)
 - Create the Session factory (used per request)
 - Create the Base class (parent for all ORM models)
-
-HOW CONNECTION IS CHOSEN (priority order):
-1) If env var DATABASE_URL is set -> use it verbatim.
-   - Example: postgresql://postgres:admin@db:5432/node_exercise
-2) Otherwise, compose from POSTGRES_* env vars with sensible defaults:
-   POSTGRES_USER     (default: postgres)
-   POSTGRES_PASSWORD (default: admin)
-   POSTGRES_DB       (default: node_exercise)
-   POSTGRES_HOST     (default: localhost)   # in Docker Compose: usually 'db'
-   POSTGRES_PORT     (default: 5432)
+- Provide the get_db dependency for FastAPI
 """
 
 import os
+from typing import Generator
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker, declarative_base, Session
 
 # -------- Resolve connection string from environment (env-first) ----------
 def _build_db_url() -> str:
-    # 1) Full URL provided?
     url = os.getenv("DATABASE_URL")
     if url:
         return url
@@ -53,6 +44,21 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # -------- Declarative base for ORM models ---------------------------------
 Base = declarative_base()
+
+# -------- Dependency: DB session per request ------------------------------
+def get_db() -> Generator[Session, None, None]:
+    """
+    Yields a SQLAlchemy Session for the duration of a single request.
+    FastAPI will:
+      - call this before the endpoint (open session)
+      - run the endpoint
+      - finally block closes the session after the endpoint returns/raises
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 # -------- Dev helper: create tables when run directly ---------------------
 if __name__ == "__main__":
