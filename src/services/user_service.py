@@ -39,7 +39,7 @@ def update_admin_status(db: Session, username: str, make_admin: bool) -> UserOut
     """
     Unified function to promote or demote a user.
     """
-    repo = UserRepository(db) # אתחול
+    repo = UserRepository(db) 
 
     # 1. Find user
     user = repo.get_by_username(username)

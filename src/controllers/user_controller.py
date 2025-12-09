@@ -1,14 +1,13 @@
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
-# הוספנו את get_db כדי להשתמש בו ב-Dependency
 from database import get_db
 from services import user_service
 from schemas.user_schema import RegisterRequest, UserOut
 
 class UserController:
     def __init__(self, db: Session):
-        # הערה 6: הקונטרולר מקבל את ה-Session ומוודא שהוא קיים
+        #  הקונטרולר מקבל את ה-Session ומוודא שהוא קיים
         if not db:
             raise HTTPException(status_code=500, detail="Database session is missing")
         self.db = db
