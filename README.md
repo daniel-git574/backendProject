@@ -96,7 +96,7 @@ services/: The "Logic". Checks passwords, encrypts data, and applies rules.
 repositories/: The "Warehouse". Talks directly to the database (SQLAlchemy).
 routers/: The "Menu". Defines the URLs (like /login, /users).
 models.py: Defines how the tables look in the database.
-
+uvicorn src.main:app --reload
 How to Test?
 Open your browser at: http://localhost:8000/docs
 Try the POST /users to create a new user.
