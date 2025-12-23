@@ -3,8 +3,14 @@ __pycache__/
 .vscode/
 *.db
 .env
+*.json
 # Terraform
 .terraform/
 *.tfstate
 *.tfstate.backup
 .terraform.lock.hcl
+# Terraform state files - SECURITY RISK
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf

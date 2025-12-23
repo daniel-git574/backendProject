@@ -1,11 +1,11 @@
 name: Build and Save Docker Image
 
-# 1. הטריגר: מתי להתעורר?
+# 1. הטריגר: מתי להתעורר
 on:
   release:
     types: [published]
 
-# 2. העבודה: מה לעשות?
+# 2. העבודה: מה לעשות
 jobs:
   build-and-save:
     runs-on: ubuntu-latest
@@ -21,7 +21,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # צעד ג: בנייה ושמירה לקובץ (דרישה 1)
+      # צעד ג: בנייה ושמירה לקובץ
       - name: Build and Export
         uses: docker/build-push-action@v5
         with:
@@ -29,7 +29,7 @@ jobs:
           tags: my-app:${{ github.ref_name }}
           outputs: type=docker,dest=/tmp/my-image.tar
 
-      # צעד ד: העלאה לאתר (דרישה 2)
+      # צעד ד: העלאה לאתר 
       - name: Upload Artifact
         uses: softprops/action-gh-release@v1
         with:
