@@ -30,5 +30,4 @@ variable "db_password" {
   description = "The password for the PostgreSQL user"
   type        = string
   sensitive   = true               # Prevents password from showing in logs
-  default     = "MySecretPass123!" # Default password for development only
 }
