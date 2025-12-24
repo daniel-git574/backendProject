@@ -35,5 +35,5 @@ variable "db_password" {
 variable "image_tag" {
   description = "The Docker image version to deploy"
   type        = string
-  default     = "v0.0.2"
+  default     = "v0.0.4"
 }
