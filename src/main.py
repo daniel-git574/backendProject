@@ -16,9 +16,7 @@ from routers import auth, users, array
 from database import Base, engine, SessionLocal
 from core.security import get_current_user
 
-# ---------------------------------------------------------
 # LIFESPAN: Manage Application Startup & Shutdown
-# ---------------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # --- STARTUP LOGIC ---
@@ -33,7 +31,6 @@ async def lifespan(app: FastAPI):
 
     # 2. Database Health Check (Internal Log)
     # This verifies that the API can talk to the DB during startup.
-    # Useful for the cloud logs (what the manager sees).
     try:
         db = SessionLocal()
         db.execute(text("SELECT 1"))  # Simple query to check connection
@@ -56,10 +53,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# ---------------------------------------------------------
 # GLOBAL EXCEPTION HANDLERS
-# ---------------------------------------------------------
-
 # 1. Handle standard HTTP exceptions (like 404, 401, 403)
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
@@ -92,17 +86,12 @@ async def global_exception_handler(request: Request, exc: Exception):
         },
     )
 
-# ---------------------------------------------------------
 # ROUTER REGISTRATION
-# ---------------------------------------------------------
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(array.router)
 
-# ---------------------------------------------------------
 # ENDPOINTS
-# ---------------------------------------------------------
-
 # Public root endpoint - Includes Real-Time DB Check for the Client
 @app.get("/")
 def root():
@@ -117,8 +106,11 @@ def root():
 
     # Return the status to the terminal/browser
     return {
-        "msg": "API is running",
-        "database_status": db_status
+        #"msg": "API is running",
+        #"database_status": db_status
+        "msg": "Daniel's API - Version v0.0.3 - UPDATE SUCCESSFUL!", 
+        "database_status": db_status,
+        "environment": "Google Cloud Run (Proxy Access)"
     }
 
 # Protected health endpoint - Requires valid JWT token

@@ -16,8 +16,9 @@ resource "google_cloud_run_v2_service" "api" {
 
     containers {
       # Docker Image Location
-      image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.app_name}-repo/backend-api:v2"
-
+      #image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.app_name}-repo/backend-api:v2"
+      #Via GitHub Actions & Docker Hub
+      image = "${var.region}-docker.pkg.dev/${var.project_id}/docker-hub-remote/nywn/backend-project:${var.image_tag}"
       ports {
         container_port = 8000
       }

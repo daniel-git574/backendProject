@@ -29,5 +29,11 @@ variable "app_name" {
 variable "db_password" {
   description = "The password for the PostgreSQL user"
   type        = string
-  sensitive   = true               # Prevents password from showing in logs
+  sensitive   = true # Prevents password from showing in logs
+}
+
+variable "image_tag" {
+  description = "The Docker image version to deploy"
+  type        = string
+  default     = "v0.0.2"
 }
